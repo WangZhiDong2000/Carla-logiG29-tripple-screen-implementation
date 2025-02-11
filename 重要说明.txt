@@ -1,0 +1,38 @@
+0.默认conda环境名称CARLA
+
+1. 如需新建conda环境，使用如下命令安装torch：
+pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118 -f https://download.pytorch.org/whl/torch_stable.html -i https://pypi.tuna.tsinghua.edu.cn/simple/ some-package --trusted-host mirrors.aliyun.com
+
+2.并行CARLA：
+（1）服务端，使用控制台命令开启第一个服务端：
+CarlaUE4.exe -quality-level=Low -carla-rpc-port=4000 -ini:[/Script/Engine.RendererSettings]:r.GraphicsAdapter=0
+CarlaUE4.exe -quality-level=High -carla-rpc-port=4000 -ini:[/Script/Engine.RendererSettings]:r.GraphicsAdapter=0
+
+CarlaUE4.exe -quality-level=High -carla-rpc-port=5000 -ini:[/Script/Engine.RendererSettings]:r.GraphicsAdapter=2
+
+使用控制台命令开启第二个服务端：
+CarlaUE4.exe -quality-level=Low -carla-rpc-port=5000 -ini:[/Script/Engine.RendererSettings]:r.GraphicsAdapter=2
+
+此时第一个carla使用端口4000，第一个显卡；第二个carla使用端口5000，第二个显卡(GraphicsAdapter=1是集成显卡，请勿使用）
+
+（2）客户端
+首先指定cuda数据位于哪个显卡：
+全部import torch下面加入：torch.cuda.set_device(0) ；torch.cuda.set_device(1)
+或device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu") 
+
+env中指定连接哪个carla服务端：
+self.client = carla.Client("localhost", 4000) 或 self.client = carla.Client("localhost", 5000)
+
+同一个项目下的同时运行两个py文件，右上角-编辑配置-允许多个实例；不同项目同时运行，左上角-打开项目-自动弹出新窗口。
+
+tensorboard需要指定端口打开多个tensorboard：
+tensorboard  --logdir=/tmp --port=6005 
+tensorboard  --logdir=runs
+
+
+最后通过任务管理器查看两个显卡利用率，如果正确设置两个任务运行速度会相同。
+
+
+
+
+
