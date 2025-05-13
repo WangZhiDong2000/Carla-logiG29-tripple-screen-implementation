@@ -1,8 +1,12 @@
 import argparse
+import subprocess
+import time
+
 import gym
 import numpy as np
 import os
 
+import psutil
 import torch
 import os, sys
 import glob
@@ -27,6 +31,51 @@ try:
         'win-amd64' if os.name == 'nt' else 'linux-x86_64'))[0])
 except IndexError:
     pass
+def kill_carla():
+    """杀死CARLA进程"""
+    for process in psutil.process_iter(['name']):
+        if 'CarlaUE4' in process.info['name']:
+            print("正在杀死CARLA进程...")
+            process.kill()
+
+def start_carla(port):
+    """启动CARLA"""
+    print("正在启动CARLA...")
+    # 启动CARLA并指定端口
+    subprocess.Popen(['C:\\Users\\Estar\\WindowsNoEditor\\CarlaUE4.exe',
+                      '-quality-level=low',
+                      '-port={}'.format(port)])
+
+
+try:
+    sys.path.append(glob.glob('C:/WindowsNoEditor/PythonAPI/carla/dist/carla-*%d.%d-%s.egg' % (
+        sys.version_info.major,
+        sys.version_info.minor,
+        'win-amd64' if os.name == 'nt' else 'linux-x86_64'))[0])
+except IndexError:
+    pass
+try:
+    sys.path.append(glob.glob('/home/codon/CARLA/CARLA_0.9.15/PythonAPI/carla/dist/carla-*%d.%d-%s.egg' % (
+        sys.version_info.major,
+        sys.version_info.minor,
+        'win-amd64' if os.name == 'nt' else 'linux-x86_64'))[0])
+except IndexError:
+    pass
+def timer(start,end):
+    """ Helper to print training time """
+    hours, rem = divmod(end-start, 3600)
+    minutes, seconds = divmod(rem, 60)
+    print("\nTraining Time:  {:0>2}:{:0>2}:{:05.2f}".format(int(hours),int(minutes),seconds))
+
+
+try:
+    sys.path.append(glob.glob('D:/CARLA_0.9.14/WindowsNoEditor/PythonAPI/carla/dist/carla-*%d.%d-%s.egg' % (
+        sys.version_info.major,
+        sys.version_info.minor,
+        'win-amd64' if os.name == 'nt' else 'linux-x86_64'))[0])
+except IndexError:
+    pass
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -92,8 +141,12 @@ def main():
 
     if args.save_model and not os.path.exists("./models"):
         os.makedirs("./models")
+    kill_carla()
+    port = 2000
+    start_carla(port=port)
+    time.sleep(10)
 
-    env = gym.make(args.env)
+    env = gym.make(args.env, port=port)
 
     # Set seeds
     env.seed(args.seed)

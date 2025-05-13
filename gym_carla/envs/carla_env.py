@@ -57,8 +57,8 @@ import gym_carla
 
 
 class CarlaEnv(gym.Env):
-    def __init__(self):
-        super(CarlaEnv, self).__init__()
+    def __init__(self, port=2000):
+        super().__init__()
         self.target_vehicles = {}
         self.consider = 5
         self.im_height = 768
@@ -95,7 +95,7 @@ class CarlaEnv(gym.Env):
         self.sensor_queue = None
         self.actor_vehicle_list = []
         self.actor_sensor_list = []
-        self.client = carla.Client('localhost', 2000)
+        self.client = carla.Client('localhost', port=port)
         self.client.set_timeout(20.0)
         self.client.load_world('/Game/Carla/Maps/Town06')
         self.world = self.client.get_world()
@@ -200,6 +200,8 @@ class CarlaEnv(gym.Env):
 
         # steering wheel
         self.controller = LogitechController()
+        self.controller.steering_initialize()
+
 
     def render(self, mode='human'):
         pass
@@ -234,6 +236,8 @@ class CarlaEnv(gym.Env):
     def reset(self):
         """Resets CARLA environment"""
         self.target_vehicles = {}
+        # self.controller = LogitechController()
+        # self.controller.steering_initialize()
 
         n = random.random()
         self.transform_dict[f"transform{1}"] = carla.Transform(
@@ -362,6 +366,7 @@ class CarlaEnv(gym.Env):
                 ped_suc = True
                 self.vehicle_ego_bp = self.blueprint_library.find('vehicle.audi.etron')
                 self.vehicle_ego_bp.set_attribute('role_name', 'hero')
+
 
                 self.vehicle_ego = self.world.spawn_actor(self.vehicle_ego_bp, self.transform_ego)
                 self.actor_vehicle_list.append(self.vehicle_ego)
@@ -641,6 +646,9 @@ class CarlaEnv(gym.Env):
         writer.add_scalar("average_jerk", self.average_jerk / self.settings.fixed_delta_seconds, self.i)
 
     def step(self, u):
+        # for actor in self.world.get_actors():
+        #     if actor.attributes.get("role_name") in ["hero", "ego_vehicle"]:
+        #         print(actor)
         self.world.tick()
         self.j += 1
         at = u
@@ -671,25 +679,19 @@ class CarlaEnv(gym.Env):
                 self.target_vehicles[f"target_vehicle_{6}"].id).get_transform().location.x > world_snapshot.find(
             self.vehicle_ego.id).get_transform().location.x > -252.2 + 21:
             self.vehicle_ego.apply_control(self.control)
-            try:
-                # pass
-                is_wheel_updated = self.controller.logi_update()
 
-                print(f'is_wheel_updated: {is_wheel_updated}')
-                self.spin_steering_wheel(self.control.steer)
-            except:
-                print('wheel exception')
-                # self.controller.steering_shutdown()
         else:
             self.vehicle_ego.apply_control(self.control)
-            try:
-                # pass
-                is_wheel_updated = self.controller.logi_update()
-                print(f'is_wheel_updated: {is_wheel_updated}')
-                print(self.control.steer)
-                self.spin_steering_wheel(self.control.steer)
-            except:
-                print('wheel exception')
+        try:
+            # is_wheel_updated = self.controller.logi_update()
+            # print(f'is_wheel_updated: {is_wheel_updated}')
+            force = int(random.random() * 50)
+            print(f'force: {force}')
+            self.controller.LogiPlaySpringForce(0, force, 100, 40)
+            self.controller.logi_update()
+
+        except:
+            print('wheel exception')
 
         for i in range(1, self.n_target_vehicle + 1):
             self.target_vehicles[f"target_vehicle_{i}"].apply_control(control)

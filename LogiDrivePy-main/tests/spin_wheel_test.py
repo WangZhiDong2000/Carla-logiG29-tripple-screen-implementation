@@ -7,12 +7,12 @@ import tkinter as tk
 
 def spin_controller(controller, test_spin=False):
     print(f'is wheel connected: {controller.LogiIsConnected(0)}')
-    if not test_spin:
-        for i in range(-100, 0, 2):  # for i in range(-100, 102, 2):
+    if test_spin:
+        for i in range(-40, 40, 1):  # for i in range(-100, 102, 2):
             controller.LogiPlaySpringForce(0, i, 100, 40)
             # controller.play_spring_force(0, i, 100, 40)  # DO NOT RUN THIS LINE
             controller.logi_update()
-            time.sleep(0.1)
+            time.sleep(1)
     else:
         # for i in [0, 0, -6, 6]:  # first value seems to be omitted, spin to a specified angle e.g 0
         #     r = controller.LogiPlaySpringForce(0, i, 100, 40)
@@ -34,8 +34,8 @@ def spin_test(test_spin=False):
 
     controller.steering_initialize()
     print("\n---Logitech Spin Test---")
-    # spin_controller(controller, test_spin)
-    # controller.logi_update()
+    spin_controller(controller, test_spin)
+    controller.logi_update()
     time.sleep(5.0)
 
     r = controller.LogiPlaySpringForce(0, -50, 100, 40)
